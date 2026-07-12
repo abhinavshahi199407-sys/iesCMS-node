@@ -87,6 +87,10 @@ module.exports = {
                 val = cms._hashPassword(val.trim()); // scrypt hash with random salt → $1$<salt>$<hash>
             }
 
+            // On INSERT, skip blank values so DB column defaults apply — '' is not
+            // valid for numeric columns (e.g. users.userLevel int NOT NULL DEFAULT 0)
+            if (isNew && (val === undefined || val === null || ('' + val).trim() === '')) { continue; }
+
             // Flags:e — field lives in extra JSONB column, not a real table column
             if (flags.indexOf('e') >= 0) {
                 jsonFields[fieldName] = val;
