@@ -1,0 +1,15 @@
+{
+  "portalHome": "https://upexcise.up.gov.in/",
+  "profileDir": ".portal-profile",
+  "downloadDir": "downloads",
+  "intervalMinutes": 30,
+  "activeHours": { "start": 8, "end": 22 },
+  "reports": [
+    {
+      "name": "FL4C_MGR",
+      "url": "PASTE-THE-REPORT-PAGE-URL-HERE (run: node fetch_reports.mjs --setup)",
+      "exportSelector": "",
+      "circle": "Circle - 4"
+    }
+  ]
+}

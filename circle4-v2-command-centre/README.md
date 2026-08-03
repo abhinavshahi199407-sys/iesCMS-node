@@ -31,36 +31,43 @@ python -m http.server 8080
 # open http://localhost:8080/public/
 ```
 
-## Live monitoring — single-click flow
+## Live monitoring
 
-The whole pipeline after the portal is automated; the one manual click is the
-report export you already do on the portal with your own authorised session:
+Two levels of automation, both running on the authorised office machine:
 
-```
-You click "export" on the IESCMS portal  (the single click)
-        ↓  file lands in ~/Downloads
-collector/ingest.js --watch              (auto-detects, parses, publishes)
-        ↓  data/latest_mgr.json  (+ PostgreSQL insert when C4_DB_URL is set)
-Dashboard + MCP server                   (both pick up new data instantly,
-                                          no restart — live reload)
-        ↓
-Claude answers from the fresh snapshot
-```
-
-Start the watcher once (e.g. at login):
+**Level 1 — single click.** You export the report on the portal yourself; the
+watcher ingests it the moment the download finishes:
 
 ```bash
 node collector/ingest.js --watch ~/Downloads --circle "Circle - 4"
 ```
 
-Or ingest a single downloaded export by hand:
+**Level 2 — zero click on a schedule.** `collector/fetch_reports.mjs` drives
+your own Chrome (persistent profile). You log in once manually — username,
+password, CAPTCHA, OTP are always typed by you; the script only waits — and it
+then reopens the saved report page every 30 minutes (08:00–22:00), clicks
+export, and ingests automatically:
 
 ```bash
-node collector/ingest.js ~/Downloads/FL4C___If_any___*.xls --circle "Circle - 4"
+cd collector
+npm install                                # playwright-core, uses installed Chrome
+cp portal.config.example.json portal.config.json
+npm run setup                              # log in + navigate once, URL is saved
+npm run loop                               # or wire run_collector.sh into cron
 ```
 
-The ingester understands the portal's export quirks: the ".xls" files are
-actually HTML, and numeric cells may arrive as literal `=TRIM(...)` strings.
+When the portal session expires, the run pauses with a login prompt instead of
+failing — complete the login in the window and it continues.
+
+```
+IESCMS portal (your authorised session)
+        ↓  fetch_reports.mjs (scheduled export click)  — or your manual export
+collector/ingest.js                       (parses fake-.xls HTML, =TRIM cells)
+        ↓  data/latest_mgr.json  (+ PostgreSQL insert when C4_DB_URL is set)
+Dashboard + MCP server                    (live reload — no restart)
+        ↓
+Claude answers from the fresh snapshot
+```
 
 ## Production connection
 The portal collector must run on an authorised office machine or secured server. Preserve the authenticated session locally; do not place passwords, OTPs or CAPTCHA handling in the dashboard or MCP server.

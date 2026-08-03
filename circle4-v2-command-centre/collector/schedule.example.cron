@@ -1,3 +1,5 @@
-# Authorised collector: every 30 minutes, 08:00–21:30; final run at 22:00
-0,30 8-21 * * * /opt/gbn-excise/run_collector.sh
-0 22 * * * /opt/gbn-excise/run_collector.sh --final
+# Authorised collector: every 30 minutes, 08:00–21:30; final run at 22:00.
+# run_collector.sh calls fetch_reports.mjs --once (saved Chrome session; if the
+# session expired it prompts for a manual login instead of failing).
+0,30 8-21 * * * /opt/gbn-excise/circle4-v2-command-centre/collector/run_collector.sh
+0 22 * * * /opt/gbn-excise/circle4-v2-command-centre/collector/run_collector.sh --final

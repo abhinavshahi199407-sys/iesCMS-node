@@ -1,0 +1,19 @@
+{
+  "name": "gbn-excise-collector",
+  "version": "1.0.0",
+  "description": "Authorized-machine collector: fetches IESCMS MIS report exports with the user's own Chrome session and ingests them for the Command Centre",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup": "node fetch_reports.mjs --setup",
+    "once": "node fetch_reports.mjs --once",
+    "loop": "node fetch_reports.mjs",
+    "test": "node test/ingest-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}
