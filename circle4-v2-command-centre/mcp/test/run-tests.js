@@ -4,6 +4,8 @@
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { mkdtempSync, writeFileSync, rmSync, copyFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -104,5 +106,44 @@ check('states LY feed not connected', /not connected/.test(brief));
 check('no invented YoY number', !/YoY: lifted/.test(brief));
 
 await client.close();
+
+// --- live reload: a snapshot dropped into the data dir while the server is
+// --- running must appear in the very next query, no restart.
+console.log('live reload of new snapshots');
+const liveDir = mkdtempSync(join(tmpdir(), 'c4-live-'));
+try {
+    copyFileSync(join(__dirname, '..', '..', 'data', 'sample_mgr.json'), join(liveDir, 'sample_mgr.json'));
+    const live = new Client({ name: 'live-test', version: '1.0.0' });
+    await live.connect(new StdioClientTransport({
+        command: process.execPath,
+        args: [join(__dirname, '..', 'server.js')],
+        env: { ...process.env, C4_DATA_DIR: liveDir },
+        stderr: 'ignore'
+    }));
+
+    let r1 = await live.callTool({ name: 'get_district_summary', arguments: {} });
+    check('starts with 8 shops', r1.structuredContent?.shop_count === 8);
+
+    writeFileSync(join(liveDir, 'latest_mgr.json'), JSON.stringify({
+        generated_from: 'FL4C_live_refresh.xls',
+        rows: [{
+            district: 'GAUTAM BUDDHA NAGAR', circle: 'Circle - 4', month: 'Aug-2026',
+            shop_id: 'PR_77', shop_name: 'PR_77', license_type: 'FL4C',
+            mgr_assigned: 1000000, final_required: 1000000,
+            mgr_lifted: 250000, balance: 750000, achievement: 25.0
+        }]
+    }));
+
+    let r2 = await live.callTool({ name: 'get_district_summary', arguments: {} });
+    check('picks up new snapshot without restart', r2.structuredContent?.shop_count === 9,
+        `got ${r2.structuredContent?.shop_count}`);
+    let r3 = await live.callTool({ name: 'get_shop_profile', arguments: { shop_id: 'PR_77' } });
+    check('new shop queryable immediately', r3.structuredContent?.shop_id === 'PR_77');
+    check('new shop achievement live', r3.structuredContent?.mgr_history?.some(h => h.achievement_pct === 25));
+    await live.close();
+} finally {
+    rmSync(liveDir, { recursive: true, force: true });
+}
+
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nALL TESTS PASSED');
 process.exit(failures ? 1 : 0);

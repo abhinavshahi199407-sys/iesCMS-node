@@ -50,13 +50,37 @@ function normalizeRow(raw) {
 }
 
 export class JsonDataSource {
+    #signature = null;
+
     constructor(dataDir) {
         this.dataDir = dataDir;
         this.kind = 'json-snapshot';
         this.description = `JSON snapshots in ${dataDir}`;
         this.snapshots = [];
         this.loadError = null;
+        this.#refresh();
+    }
+
+    // Live monitoring: the collector drops/overwrites snapshot files while the
+    // server is running, so every query re-checks the directory and reloads
+    // when any file name, size or mtime changed.
+    #currentSignature() {
+        if (!existsSync(this.dataDir)) return 'missing';
+        return readdirSync(this.dataDir)
+            .filter(f => f.endsWith('.json')).sort()
+            .map(f => {
+                const st = statSync(join(this.dataDir, f));
+                return `${f}:${st.size}:${st.mtimeMs}`;
+            }).join('|');
+    }
+
+    #refresh() {
         try {
+            const sig = this.#currentSignature();
+            if (sig === this.#signature) return;
+            this.#signature = sig;
+            this.snapshots = [];
+            this.loadError = null;
             this.#load();
         } catch (err) {
             this.loadError = err.message;
@@ -88,6 +112,7 @@ export class JsonDataSource {
     }
 
     sourceInfo() {
+        this.#refresh();
         return {
             mode: this.kind,
             detail: this.description,
@@ -97,6 +122,7 @@ export class JsonDataSource {
     }
 
     async getMgrRows({ circle, month } = {}) {
+        this.#refresh();
         let rows = this.snapshots.flatMap(s => s.rows);
         if (circle) rows = rows.filter(r => matchesCircle(r, circle));
         if (month) rows = rows.filter(r => String(r.month).toLowerCase() === String(month).toLowerCase());
@@ -110,6 +136,7 @@ export class JsonDataSource {
     }
 
     async getAlerts({ circle, shopId } = {}) {
+        this.#refresh();
         let alerts = deriveMgrAlerts(this.snapshots.flatMap(s => s.rows));
         if (circle) alerts = alerts.filter(a => matchesCircle(a, circle));
         if (shopId) alerts = alerts.filter(a => String(a.shop_id).toLowerCase() === String(shopId).toLowerCase());

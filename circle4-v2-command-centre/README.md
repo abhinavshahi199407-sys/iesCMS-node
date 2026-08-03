@@ -31,6 +31,37 @@ python -m http.server 8080
 # open http://localhost:8080/public/
 ```
 
+## Live monitoring — single-click flow
+
+The whole pipeline after the portal is automated; the one manual click is the
+report export you already do on the portal with your own authorised session:
+
+```
+You click "export" on the IESCMS portal  (the single click)
+        ↓  file lands in ~/Downloads
+collector/ingest.js --watch              (auto-detects, parses, publishes)
+        ↓  data/latest_mgr.json  (+ PostgreSQL insert when C4_DB_URL is set)
+Dashboard + MCP server                   (both pick up new data instantly,
+                                          no restart — live reload)
+        ↓
+Claude answers from the fresh snapshot
+```
+
+Start the watcher once (e.g. at login):
+
+```bash
+node collector/ingest.js --watch ~/Downloads --circle "Circle - 4"
+```
+
+Or ingest a single downloaded export by hand:
+
+```bash
+node collector/ingest.js ~/Downloads/FL4C___If_any___*.xls --circle "Circle - 4"
+```
+
+The ingester understands the portal's export quirks: the ".xls" files are
+actually HTML, and numeric cells may arrive as literal `=TRIM(...)` strings.
+
 ## Production connection
 The portal collector must run on an authorised office machine or secured server. Preserve the authenticated session locally; do not place passwords, OTPs or CAPTCHA handling in the dashboard or MCP server.
 

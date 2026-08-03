@@ -25,6 +25,11 @@ Selected automatically from the environment:
 | `C4_DATA_DIR` set | Any directory of normalized collector JSON snapshots (`{ generated_from, rows: [...] }`, as produced by `collector/parse_upexcise_xls.py`). |
 | nothing set | The project's `../data/` folder (ships with the Circle-4 FL4C Jul-2026 sample). |
 
+**Live monitoring:** in JSON mode the server re-checks the data directory on
+every query and reloads changed files automatically — when
+`collector/ingest.js --watch` publishes a new snapshot, the very next tool call
+answers from it. No restart needed.
+
 In PostgreSQL mode the server reads the latest snapshot per shop from
 `report_snapshots` (`report_type = 'MGR'`, normalized row stored in the
 `metric` jsonb column — same keys as the collector JSON output) and open rows
