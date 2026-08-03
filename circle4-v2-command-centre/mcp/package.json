@@ -1,0 +1,23 @@
+{
+  "name": "gbn-excise-mcp-server",
+  "version": "1.0.0",
+  "description": "Read-only MCP server for the Gautam Buddh Nagar Excise Command Centre monitoring database",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "gbn-excise-mcp-server": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/run-tests.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "pg": "^8.22.0",
+    "zod": "^3.25.1"
+  }
+}
