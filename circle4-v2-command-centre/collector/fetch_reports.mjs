@@ -41,7 +41,9 @@ function loadConfig() {
         console.error('No portal.config.json found. Copy portal.config.example.json to portal.config.json first.');
         process.exit(2);
     }
-    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    const cfg = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    delete cfg._steps_help;
+    return cfg;
 }
 
 async function launchBrowser(cfg) {
@@ -99,6 +101,24 @@ async function clickExport(page, selector) {
         `portal.config.json as "exportSelector". Tried: ${candidates.join(' , ')}`);
 }
 
+// Optional per-report steps executed after the page loads and before the
+// export click — for report-builder pages (like /customreport) that need a
+// report type selected and a Generate click first. Configure in
+// portal.config.json:  "steps": [{action, selector, value|ms}, ...]
+async function runSteps(page, steps) {
+    for (const s of steps || []) {
+        switch (s.action) {
+            case 'click': await page.locator(s.selector).first().click(); break;
+            case 'select': await page.locator(s.selector).first().selectOption({ label: s.value }).catch(() =>
+                page.locator(s.selector).first().selectOption(s.value)); break;
+            case 'fill': await page.locator(s.selector).first().fill(s.value); break;
+            case 'wait': await page.locator(s.selector).first().waitFor({ timeout: s.ms || 60000 }); break;
+            case 'pause': await page.waitForTimeout(s.ms || 1000); break;
+            default: throw new Error(`Unknown step action "${s.action}" (use click/select/fill/wait/pause)`);
+        }
+    }
+}
+
 async function fetchReport(ctx, cfg, report) {
     const page = await ctx.newPage();
     try {
@@ -107,6 +127,7 @@ async function fetchReport(ctx, cfg, report) {
             await waitForHumanLogin(page);
             await page.goto(report.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
         }
+        await runSteps(page, report.steps);
         const downloadDir = resolve(__dirname, cfg.downloadDir || 'downloads');
         mkdirSync(downloadDir, { recursive: true });
 
