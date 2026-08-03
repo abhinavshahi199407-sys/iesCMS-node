@@ -3,6 +3,8 @@
   "profileDir": ".portal-profile",
   "downloadDir": "downloads",
   "intervalMinutes": 30,
+  "keepAliveMinutes": 10,
+  "keepAliveUrl": "",
   "activeHours": { "start": 8, "end": 22 },
   "reports": [
     {

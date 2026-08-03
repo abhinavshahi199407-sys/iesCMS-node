@@ -56,8 +56,16 @@ npm run setup                              # log in + navigate once, URL is save
 npm run loop                               # or wire run_collector.sh into cron
 ```
 
-When the portal session expires, the run pauses with a login prompt instead of
-failing — complete the login in the window and it continues.
+**Staying logged in.** The login lives in a persistent Chrome profile, so it
+survives script restarts and reboots. In loop mode the collector also pings the
+portal every 10 minutes (`keepAliveMinutes`), 24×7 — the same effect as keeping
+the tab open and clicking occasionally — so the session's idle timer never
+expires. One login can therefore last as long as the machine and the loop keep
+running. What no client can prevent: a server-side forced expiry (daily cutoff,
+password change, or logging in from another device on a single-session portal).
+When that happens the collector doesn't fail — it logs a clear warning and the
+next cycle pauses with a login prompt; complete the login in the window and it
+continues.
 
 ```
 IESCMS portal (your authorised session)

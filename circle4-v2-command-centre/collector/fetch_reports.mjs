@@ -125,6 +125,29 @@ async function fetchReport(ctx, cfg, report) {
     }
 }
 
+// Keep-alive: touch the portal every few minutes so the authorized session's
+// idle timer never expires — the same effect as keeping the tab open and
+// clicking now and then. This does NOT bypass anything: a server-side forced
+// expiry (daily cutoff, password change, single-session policy) still ends
+// the session, and the next cycle will pause for a manual login.
+async function keepAlive(ctx, cfg) {
+    const page = await ctx.newPage();
+    try {
+        await page.goto(cfg.keepAliveUrl || cfg.portalHome, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        if (await looksLikeLogin(page)) {
+            console.warn(`[keep-alive ${new Date().toLocaleTimeString()}] portal session EXPIRED server-side — ` +
+                'log in again in the collector window (or run: npm run setup).');
+            return false;
+        }
+        return true;
+    } catch (err) {
+        console.warn(`[keep-alive] ping failed: ${err.message}`);
+        return true; // network blip — don't spam login warnings
+    } finally {
+        await page.close();
+    }
+}
+
 async function runOnce(ctx, cfg) {
     for (const report of cfg.reports || []) {
         if (!report.url || report.url.includes('PASTE-THE-REPORT-PAGE-URL')) {
@@ -169,15 +192,28 @@ async function main() {
         return;
     }
 
-    // Loop mode: every intervalMinutes inside activeHours, final run at end hour.
-    const interval = (cfg.intervalMinutes || 30) * 60 * 1000;
+    // Loop mode: reports every intervalMinutes inside activeHours; keep-alive
+    // pings every keepAliveMinutes around the clock so the one-time login
+    // stays valid as long as the machine and this script keep running.
+    const fetchEvery = (cfg.intervalMinutes || 30) * 60 * 1000;
+    const pingEvery = (cfg.keepAliveMinutes || 10) * 60 * 1000;
     const { start = 8, end = 22 } = cfg.activeHours || {};
-    console.log(`Loop mode: every ${cfg.intervalMinutes || 30} min, ${start}:00-${end}:00. Ctrl-C to stop.`);
+    console.log(`Loop mode: reports every ${cfg.intervalMinutes || 30} min (${start}:00-${end}:00), ` +
+        `session keep-alive every ${cfg.keepAliveMinutes || 10} min, 24x7. Ctrl-C to stop.`);
+
+    let lastFetch = 0, lastPing = 0;
     for (;;) {
+        const now = Date.now();
         const h = new Date().getHours();
-        if (h >= start && h <= end) await runOnce(ctx, cfg);
-        else console.log(`Outside active hours (${start}:00-${end}:00) — idle.`);
-        await new Promise(res => setTimeout(res, interval));
+        if (now - lastPing >= pingEvery) {
+            lastPing = now;
+            await keepAlive(ctx, cfg);
+        }
+        if (h >= start && h <= end && now - lastFetch >= fetchEvery) {
+            lastFetch = now;
+            await runOnce(ctx, cfg);
+        }
+        await new Promise(res => setTimeout(res, 60 * 1000));
     }
 }
 
