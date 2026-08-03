@@ -139,7 +139,12 @@ async function fetchReport(ctx, cfg, report) {
         await download.saveAs(file);
         console.log(`[${report.name}] downloaded ${download.suggestedFilename()}`);
 
-        await ingestFile(file, { circle: report.circle });
+        await ingestFile(file, {
+            circle: report.circle,
+            parser: report.parser || 'mgr',
+            name: report.name,
+            out: report.out
+        });
         console.log(`[${report.name}] ingested — dashboard and MCP are now current.`);
     } finally {
         await page.close();

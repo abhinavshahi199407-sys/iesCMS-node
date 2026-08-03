@@ -8,7 +8,7 @@ import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseMgrExport, ingestFile } from '../ingest.js';
+import { parseMgrExport, parseGenericExport, ingestFile } from '../ingest.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixture = join(__dirname, 'fixtures', 'fl4c_fixture.xls');
@@ -43,6 +43,26 @@ try {
     check('records ingest time', typeof onDisk.ingested_at === 'string');
 } finally {
     rmSync(tmp, { recursive: true, force: true });
+}
+
+console.log('parseGenericExport (unmapped report layouts)');
+const generic = parseGenericExport(readFileSync(fixture, 'utf8'));
+check('headers normalized', generic.columns.includes('mgr_assigned') && generic.columns.includes('shop_id'),
+    generic.columns.join(','));
+check('3 data rows captured', generic.rows.length === 3, `got ${generic.rows.length}`);
+check('numbers typed as numbers', generic.rows[0].mgr_assigned === 2537916.67);
+check('text stays text', generic.rows[1].shop_name === 'Liquor & Town');
+
+console.log('ingestFile with generic parser');
+const tmp2 = mkdtempSync(join(tmpdir(), 'c4-generic-'));
+try {
+    const out2 = join(tmp2, 'raw_capture.json');
+    const doc2 = await ingestFile(fixture, { parser: 'generic', name: 'FL5DB_TEST', circle: '4', out: out2 });
+    check('circle filter works on generic rows', doc2.rows.length === 2, `got ${doc2.rows.length}`);
+    check('columns recorded', Array.isArray(doc2.columns) && doc2.columns.length >= 18);
+    check('report name recorded', doc2.report === 'FL5DB_TEST');
+} finally {
+    rmSync(tmp2, { recursive: true, force: true });
 }
 
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nALL INGEST TESTS PASSED');

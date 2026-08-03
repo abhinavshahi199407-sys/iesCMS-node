@@ -17,7 +17,7 @@
 // If C4_DB_URL / DATABASE_URL is set, rows are also inserted into the
 // monitoring database (report_snapshots + shops upsert), deduped by file hash.
 
-import { readFileSync, writeFileSync, existsSync, statSync, readdirSync, watch } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync, mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -104,6 +104,35 @@ export function parseMgrExport(html) {
     return rows;
 }
 
+/**
+ * Generic parser for reports whose layout has not been mapped yet (FL5DB,
+ * FL4A, CL5C, POS sales …): captures the main table as-is, first row as
+ * headers, every later row as an object keyed by normalized header names.
+ * Raw captures go to data/raw/ so the MGR-shaped MCP snapshots stay clean.
+ */
+export function parseGenericExport(html) {
+    const tables = extractTables(html);
+    if (!tables.length) throw new Error('No <table> found — is this really an IESCMS export?');
+    const named = tables.find(t => /oasysMISToolTable/i.test(t.attrs));
+    const table = named || tables.reduce((a, b) =>
+        tableRows(a.body).length >= tableRows(b.body).length ? a : b);
+
+    const all = tableRows(table.body).filter(r => r.length >= 2);
+    if (all.length < 2) throw new Error('Table has no data rows.');
+    const headers = all[0].map((h, i) =>
+        (h || `col_${i}`).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `col_${i}`);
+    return {
+        columns: headers,
+        rows: all.slice(1)
+            .filter(c => c.length >= Math.min(3, headers.length))
+            .map(c => Object.fromEntries(headers.map((h, i) => {
+                const v = c[i] ?? '';
+                const n = toNum(v);
+                return [h, n != null && /[\d]/.test(v) && !/[a-z]{2,}/i.test(v) ? n : v];
+            })))
+    };
+}
+
 // ------------------------------------------------------------ database ----
 
 async function insertIntoDb(rows, sourceFile, sourceHash) {
@@ -151,16 +180,41 @@ async function insertIntoDb(rows, sourceFile, sourceHash) {
 
 // -------------------------------------------------------------- ingest ----
 
-export async function ingestFile(path, { circle, out = DEFAULT_OUT } = {}) {
+const circleMatches = (value, circle) => {
+    const want = circle.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const have = String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return have === want || have.endsWith(want) || have === `circle${want}`;
+};
+
+export async function ingestFile(path, { circle, out, parser = 'mgr', name } = {}) {
     const raw = readFileSync(path, 'utf8');
-    let rows = parseMgrExport(raw);
-    if (circle) {
-        const want = circle.toLowerCase().replace(/[^a-z0-9]/g, '');
-        rows = rows.filter(r => {
-            const have = String(r.circle || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            return have === want || have.endsWith(want) || have === `circle${want}`;
-        });
+
+    if (parser === 'generic') {
+        const parsed = parseGenericExport(raw);
+        let rows = parsed.rows;
+        if (circle) {
+            const key = parsed.columns.find(c => c.includes('circle'));
+            if (key) rows = rows.filter(r => circleMatches(r[key], circle));
+        }
+        const rawDir = join(__dirname, '..', 'data', 'raw');
+        mkdirSync(rawDir, { recursive: true });
+        const target = out || join(rawDir, `${name || basename(path).replace(/\.[^.]+$/, '')}.json`);
+        const doc = {
+            generated_from: basename(path),
+            report: name || null,
+            parser: 'generic',
+            ingested_at: new Date().toISOString(),
+            columns: parsed.columns,
+            rows
+        };
+        writeFileSync(target, JSON.stringify(doc, null, 2));
+        console.log(`Wrote ${rows.length} raw rows (${parsed.columns.length} cols) -> ${target}`);
+        console.log('Note: generic capture only — share this export once and the layout can be mapped to a typed parser + DB feed.');
+        return doc;
     }
+
+    let rows = parseMgrExport(raw);
+    if (circle) rows = rows.filter(r => circleMatches(r.circle, circle));
     if (!rows.length) throw new Error(`Parsed 0 data rows from ${path} — layout may differ from the FL4C MGR report.`);
 
     const doc = {
@@ -168,8 +222,9 @@ export async function ingestFile(path, { circle, out = DEFAULT_OUT } = {}) {
         ingested_at: new Date().toISOString(),
         rows
     };
-    writeFileSync(out, JSON.stringify(doc, null, 2));
-    console.log(`Wrote ${rows.length} rows -> ${out}`);
+    const target = out || DEFAULT_OUT;
+    writeFileSync(target, JSON.stringify(doc, null, 2));
+    console.log(`Wrote ${rows.length} rows -> ${target}`);
 
     const hash = createHash('sha1').update(raw).digest('hex');
     await insertIntoDb(rows, basename(path), hash);
@@ -213,7 +268,9 @@ if (isMain) {
     const watchTarget = arg('--watch');
     const opts = {
         circle: arg('--circle'),
-        out: arg('--out') ? resolve(arg('--out')) : DEFAULT_OUT
+        parser: arg('--parser') || 'mgr',
+        name: arg('--name'),
+        out: arg('--out') ? resolve(arg('--out')) : undefined
     };
     if (watchTarget) {
         watchDir(resolve(watchTarget), { ...opts, pattern: arg('--pattern') || 'FL4C.*\\.xls' });
@@ -226,7 +283,7 @@ if (isMain) {
         }
         const file = positionals[0];
         if (!file) {
-            console.error('Usage: node ingest.js <export.xls> [--circle "Circle - 4"] [--out path.json]\n' +
+            console.error('Usage: node ingest.js <export.xls> [--circle "Circle - 4"] [--parser mgr|generic] [--name REPORT] [--out path.json]\n' +
                 '       node ingest.js --watch <dir> [--pattern FL4C] [--circle "Circle - 4"]');
             process.exit(2);
         }
