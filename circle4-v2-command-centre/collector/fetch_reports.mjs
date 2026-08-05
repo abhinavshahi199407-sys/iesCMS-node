@@ -176,6 +176,7 @@ async function keepAlive(ctx, cfg) {
 
 async function runOnce(ctx, cfg) {
     for (const report of cfg.reports || []) {
+        if (report.enabled === false) continue;
         if (!report.url || report.url.includes('PASTE-THE-REPORT-PAGE-URL')) {
             console.log(`[${report.name}] skipped — no URL configured yet (run --setup).`);
             continue;
