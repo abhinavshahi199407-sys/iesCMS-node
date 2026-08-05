@@ -1,0 +1,169 @@
+{
+  "portalHome": "https://mis.upexciseonline.co/",
+  "profileDir": ".portal-profile",
+  "downloadDir": "downloads",
+  "intervalMinutes": 30,
+  "keepAliveMinutes": 10,
+  "keepAliveUrl": "https://mis.upexciseonline.co/dashboard/omisystem/customreport",
+  "activeHours": {
+    "start": 8,
+    "end": 22
+  },
+  "reports": [
+    {
+      "name": "FL4C_MGR",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=237201",
+      "steps": [],
+      "_setup_note": "Select LAST and CURRENT year on the page, scroll down, then export. Record the dropdown selections as steps once selectors are known.",
+      "exportSelector": "",
+      "parser": "mgr",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "FL5DB_MONTHWISE_LY",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=21720",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "FL5DB_MONTHWISE_CY",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=25720",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "FL4A",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=24720",
+      "steps": [],
+      "_setup_note": "Select year, month and licence type FL4A on the page before export.",
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "CL5C",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=237211",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "POS_SALES_A",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=20705",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "POS_SALES_B",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=207055",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "CL5CC",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=247211",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "CL_SHOPWISE_MGQ",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=24721",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "_setup_note": "District/Month/Shop-wise MGQ lifting CL5C+CL5CC 2026-27 — shop-level, preferred for the shop table."
+    },
+    {
+      "name": "DISPATCH_FL_BEER_WH_RETAIL",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=20796",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "DISPATCH_CL_WH_RETAIL",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=20798",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "SALE_INVOICE_ALL_EXCEPT_BEER",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=21777",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4"
+    },
+    {
+      "name": "SALE_INVOICE_BREWERY",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=21775",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    },
+    {
+      "name": "FL5DB_FL_ONLY_WINE_ADJ",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=25722",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    },
+    {
+      "name": "FL5DB_BEER_ONLY_WINE_ADJ",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=25723",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    },
+    {
+      "name": "FL4A_WINE_ADJ",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=25724",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    },
+    {
+      "name": "FL4A_5_PERCENT",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=23575",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    },
+    {
+      "name": "CL_75_25",
+      "url": "https://mis.upexciseonline.co/dashboard/omisystem/wscheckcustomreport?rc=217411",
+      "steps": [],
+      "exportSelector": "",
+      "parser": "generic",
+      "circle": "Circle - 4",
+      "enabled": false
+    }
+  ],
+  "_steps_help": "If a report page needs choices before export, list them in steps, e.g.: [{\"action\":\"select\",\"selector\":\"#reportType\",\"value\":\"FL4C\"},{\"action\":\"click\",\"selector\":\"button:has-text('Generate')\"},{\"action\":\"wait\",\"selector\":\"table\"},{\"action\":\"pause\",\"ms\":2000}] — actions: click, select, fill, wait, pause. parser: 'mgr' for the verified FL4C MGR layout (feeds dashboard+MCP+DB), 'generic' captures any table to data/raw/<name>.json until its layout is mapped.",
+  "_roster_help": "Full code catalogue with names: docs/REPORT_CODES.md. Reports with enabled:false are skipped; flip to true to collect them."
+}

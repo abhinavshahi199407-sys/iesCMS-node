@@ -1,0 +1,109 @@
+{
+  "generated_from": "FL4C___If_any___03_Aug_2026_082030.xls",
+  "rows": [
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_39",
+      "shop_name": "PR_39",
+      "license_type": "FL4C",
+      "mgr_assigned": 3574166.67,
+      "final_required": 3574166.67,
+      "mgr_lifted": 2762544.18,
+      "balance": 811622.49,
+      "achievement": 77.29
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_38",
+      "shop_name": "PR_38",
+      "license_type": "FL4C",
+      "mgr_assigned": 3001250.0,
+      "final_required": 3001250.0,
+      "mgr_lifted": 8318502.52,
+      "balance": -5317252.52,
+      "achievement": 277.17
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_49",
+      "shop_name": "PR_49",
+      "license_type": "FL4C",
+      "mgr_assigned": 2862916.67,
+      "final_required": 2862916.67,
+      "mgr_lifted": 3233425.97,
+      "balance": -370509.3,
+      "achievement": 112.94
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_41",
+      "shop_name": "PR_41",
+      "license_type": "FL4C",
+      "mgr_assigned": 2537916.67,
+      "final_required": 2537916.67,
+      "mgr_lifted": 516124.8,
+      "balance": 2021791.87,
+      "achievement": 20.34
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_40",
+      "shop_name": "PR_40",
+      "license_type": "FL4C",
+      "mgr_assigned": 6790416.67,
+      "final_required": 6790416.67,
+      "mgr_lifted": 5396139.82,
+      "balance": 1394276.85,
+      "achievement": 79.47
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "PR_48",
+      "shop_name": "PR_48",
+      "license_type": "FL4C",
+      "mgr_assigned": 6316250.0,
+      "final_required": 6316250.0,
+      "mgr_lifted": 5581429.86,
+      "balance": 734820.14,
+      "achievement": 88.37
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "RETAIL814855",
+      "shop_name": "The Liquor Emporium",
+      "license_type": "FL4C",
+      "mgr_assigned": 2894583.33,
+      "final_required": 2894583.33,
+      "mgr_lifted": 3405919.35,
+      "balance": -511336.02,
+      "achievement": 117.67
+    },
+    {
+      "district": "GAUTAM BUDDHA NAGAR",
+      "circle": "Circle - 4",
+      "month": "Jul-2026",
+      "shop_id": "RETAIL207178",
+      "shop_name": "Liquor Town",
+      "license_type": "FL4C",
+      "mgr_assigned": 1016250.0,
+      "final_required": 1016250.0,
+      "mgr_lifted": 1949240.27,
+      "balance": -932990.27,
+      "achievement": 191.81
+    }
+  ]
+}

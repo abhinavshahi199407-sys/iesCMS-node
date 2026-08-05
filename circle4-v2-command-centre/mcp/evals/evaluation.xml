@@ -1,0 +1,42 @@
+<evaluation>
+  <qa_pair>
+    <question>Among the Circle-4 FL4C shops in the Jul-2026 MGR snapshot, which shop ID has the lowest MGR achievement percentage?</question>
+    <answer>PR_41</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the exact MGR achievement percentage of shop PR_41 for Jul-2026?</question>
+    <answer>20.34</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>How many Circle-4 FL4C shops reached at least 100% MGR achievement in Jul-2026?</question>
+    <answer>4</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the weighted MGR achievement percentage (total lifted divided by total assigned) for all eight Circle-4 FL4C shops in Jul-2026, rounded to two decimals?</question>
+    <answer>107.48</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Which shop exceeded its Jul-2026 MGR by the largest absolute rupee amount (i.e. has the most negative balance)?</question>
+    <answer>PR_38</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>How many Circle-4 shops fall in the "watch" risk band (MGR achievement at or above 50% but below 80%) for Jul-2026?</question>
+    <answer>2</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What alert severity is currently open for the worst-performing Circle-4 shop of Jul-2026?</question>
+    <answer>critical</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Summing the balance-to-lift of every Circle-4 shop that is below 100% MGR achievement in Jul-2026, what is the total in rupees (two decimals)?</question>
+    <answer>4962511.35</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Of the two retail shops with real names — "The Liquor Emporium" and "Liquor Town" — which one has the higher MGR achievement percentage in Jul-2026?</question>
+    <answer>Liquor Town</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the mgr_lifted value (in rupees, two decimals) of the shop that lifted the most in Jul-2026?</question>
+    <answer>8318502.52</answer>
+  </qa_pair>
+</evaluation>

@@ -1,0 +1,13 @@
+<html>
+<head><title>OASYS MIS Report</title></head>
+<body>
+<table border="1"><tr><td><b>UTTAR PRADESH EXCISE DEPARTMENT</b></td></tr><tr><td>FL4C MGR Report - If any</td></tr></table>
+<table id="oasysMISToolTable" border="1">
+<tr><th>S.No</th><th>District</th><th>Circle</th><th>Month</th><th>Shop ID</th><th>Shop Name</th><th>License Type</th><th>MGR Assigned</th><th>Col8</th><th>Col9</th><th>Final Required</th><th>Col11</th><th>Col12</th><th>Col13</th><th>Col14</th><th>MGR Lifted</th><th>Balance</th><th>Achievement %</th></tr>
+<tr><td>=TRIM(1)</td><td>=TRIM(GAUTAM BUDDHA NAGAR)</td><td>Circle - 4</td><td>=TRIM(Aug-2026)</td><td>=TRIM(PR_41)</td><td>PR_41</td><td>FL4C</td><td>=TRIM(2537916.67)</td><td>0</td><td>0</td><td>2,537,916.67</td><td>0</td><td>0</td><td>0</td><td>0</td><td>=TRIM(1200000.50)</td><td>1337916.17</td><td>=TRIM(47.28)</td></tr>
+<tr><td>2</td><td>GAUTAM BUDDHA NAGAR</td><td>=TRIM(Circle - 4)</td><td>Aug-2026</td><td>RETAIL207178</td><td>Liquor &amp; Town</td><td>FL4C</td><td>1,016,250.00</td><td>0</td><td>0</td><td>=TRIM(1016250.00)</td><td>0</td><td>0</td><td>0</td><td>0</td><td>2,100,000.00</td><td>-1,083,750.00</td><td>206.64</td></tr>
+<tr><td>3</td><td>GAUTAM BUDDHA NAGAR</td><td>Circle - 2</td><td>Aug-2026</td><td>PR_99</td><td>PR_99</td><td>FL4C</td><td>1000000</td><td>0</td><td>0</td><td>1000000</td><td>0</td><td>0</td><td>0</td><td>0</td><td>500000</td><td>500000</td><td>50.00</td></tr>
+<tr><td colspan="18">Grand Total</td></tr>
+</table>
+</body>
+</html>
