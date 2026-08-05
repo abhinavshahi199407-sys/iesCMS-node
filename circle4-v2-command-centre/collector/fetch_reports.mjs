@@ -192,18 +192,21 @@ async function runOnce(ctx, cfg) {
 async function setup(cfg) {
     const ctx = await launchBrowser(cfg);
     const page = await ctx.newPage();
-    await page.goto(cfg.portalHome || 'https://upexcise.up.gov.in/', { waitUntil: 'domcontentloaded' });
-    console.log('\n1. Log in to the portal in the Chrome window (CAPTCHA/OTP yourself).');
-    console.log('2. Navigate all the way to the report you want (e.g. the FL4C MGR MIS report).');
-    console.log('3. When the report page is showing, come back here and press Enter.\n');
+    await page.goto(cfg.portalHome || 'https://mis.upexciseonline.co/', { waitUntil: 'domcontentloaded' });
+
+    const needsUrl = !cfg.reports?.[0]?.url || cfg.reports[0].url.includes('PASTE-THE-REPORT-PAGE-URL');
+    console.log('\n1. Log in to the portal in the Chrome window (username/password/CAPTCHA/OTP — you type them).');
+    if (needsUrl) console.log('2. Navigate to the report you want collected.');
+    console.log(`${needsUrl ? '3' : '2'}. Then come back here and press Enter.\n`);
     await new Promise(res => createInterface({ input: process.stdin }).once('line', res));
 
-    const url = page.url();
-    cfg.reports = cfg.reports?.length ? cfg.reports : [{ name: 'FL4C_MGR', circle: 'Circle - 4' }];
-    cfg.reports[0].url = url;
-    writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
-    console.log(`Saved report URL to portal.config.json:\n  ${url}`);
-    console.log('Your login session is kept in the local Chrome profile. Test with: node fetch_reports.mjs --once');
+    if (needsUrl) {
+        cfg.reports = cfg.reports?.length ? cfg.reports : [{ name: 'FL4C_MGR', circle: 'Circle - 4' }];
+        cfg.reports[0].url = page.url();
+        writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+        console.log(`Saved report URL to portal.config.json:\n  ${cfg.reports[0].url}`);
+    }
+    console.log('Login session saved in the local Chrome profile. Test with: node fetch_reports.mjs --once');
     await ctx.close();
     process.exit(0);
 }
