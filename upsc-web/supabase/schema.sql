@@ -1,0 +1,119 @@
+-- =====================================================================
+-- UPSC / State Civil Services prep site — Supabase schema
+-- Paste this whole file into: Supabase Dashboard -> SQL Editor -> New query
+-- Safe to re-run: everything is IF NOT EXISTS / OR REPLACE.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Admin allow-list
+--    Only user ids listed here may write. Add yourself after signing up:
+--      insert into public.admins (id) values ('<your-auth-user-uuid>');
+--    (Find the uuid in Dashboard -> Authentication -> Users)
+-- ---------------------------------------------------------------------
+create table if not exists public.admins (
+    id          uuid primary key references auth.users (id) on delete cascade,
+    created_at  timestamptz not null default now()
+);
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select exists (select 1 from public.admins a where a.id = auth.uid());
+$$;
+
+-- ---------------------------------------------------------------------
+-- 2. notes — downloadable PDF study material
+-- ---------------------------------------------------------------------
+create table if not exists public.notes (
+    id            uuid primary key default gen_random_uuid(),
+    title         text not null,
+    description   text,
+    gs_paper      text not null
+                  check (gs_paper in ('GS1', 'GS2', 'GS3', 'GS4', 'State')),
+    topic         text,
+    download_url  text not null,
+    storage_path  text,
+    created_at    timestamptz not null default now()
+);
+
+create index if not exists notes_gs_paper_idx   on public.notes (gs_paper);
+create index if not exists notes_created_at_idx on public.notes (created_at desc);
+
+-- ---------------------------------------------------------------------
+-- 3. newspaper_analysis — daily editorial / current affairs analysis
+-- ---------------------------------------------------------------------
+create table if not exists public.newspaper_analysis (
+    id                uuid primary key default gen_random_uuid(),
+    date              date not null,
+    title             text not null,
+    content           text not null,          -- Markdown
+    syllabus_mapping  text,
+    created_at        timestamptz not null default now()
+);
+
+create index if not exists newspaper_analysis_date_idx on public.newspaper_analysis (date desc);
+
+-- ---------------------------------------------------------------------
+-- 4. Row Level Security — world readable, admin writable
+-- ---------------------------------------------------------------------
+alter table public.notes              enable row level security;
+alter table public.newspaper_analysis enable row level security;
+alter table public.admins             enable row level security;
+
+drop policy if exists "notes are public" on public.notes;
+create policy "notes are public"
+    on public.notes for select
+    using (true);
+
+drop policy if exists "admins write notes" on public.notes;
+create policy "admins write notes"
+    on public.notes for all
+    to authenticated
+    using (public.is_admin())
+    with check (public.is_admin());
+
+drop policy if exists "analysis is public" on public.newspaper_analysis;
+create policy "analysis is public"
+    on public.newspaper_analysis for select
+    using (true);
+
+drop policy if exists "admins write analysis" on public.newspaper_analysis;
+create policy "admins write analysis"
+    on public.newspaper_analysis for all
+    to authenticated
+    using (public.is_admin())
+    with check (public.is_admin());
+
+drop policy if exists "admins read admin list" on public.admins;
+create policy "admins read admin list"
+    on public.admins for select
+    to authenticated
+    using (id = auth.uid());
+
+-- ---------------------------------------------------------------------
+-- 5. Storage bucket for the PDFs (public read, admin upload)
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('notes-pdfs', 'notes-pdfs', true)
+on conflict (id) do nothing;
+
+drop policy if exists "pdfs are public" on storage.objects;
+create policy "pdfs are public"
+    on storage.objects for select
+    using (bucket_id = 'notes-pdfs');
+
+drop policy if exists "admins upload pdfs" on storage.objects;
+create policy "admins upload pdfs"
+    on storage.objects for insert
+    to authenticated
+    with check (bucket_id = 'notes-pdfs' and public.is_admin());
+
+drop policy if exists "admins delete pdfs" on storage.objects;
+create policy "admins delete pdfs"
+    on storage.objects for delete
+    to authenticated
+    using (bucket_id = 'notes-pdfs' and public.is_admin());
