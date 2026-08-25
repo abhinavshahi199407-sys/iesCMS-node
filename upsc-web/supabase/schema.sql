@@ -20,18 +20,27 @@ create table if not exists public.admins (
 -- /rest/v1/rpc/is_admin. Supabase's own security linter flags that.
 create schema if not exists private;
 
+-- search_path = '' (not 'public'): the function cannot then be steered by a
+-- caller-controlled search_path, so every reference below is fully qualified.
+-- (select auth.uid()) makes the lookup an InitPlan, evaluated once per
+-- statement rather than once per row.
 create or replace function private.is_admin()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
-    select exists (select 1 from public.admins a where a.id = auth.uid());
+    select exists (
+        select 1 from public.admins a where a.id = (select auth.uid())
+    );
 $$;
 
 -- RLS expressions are evaluated as the querying role, so it needs EXECUTE.
+-- Postgres grants EXECUTE to PUBLIC on new functions by default; revoke that
+-- explicitly as defence in depth, on top of withholding schema USAGE.
 grant usage on schema private to authenticated;
+revoke execute on function private.is_admin() from public, anon, service_role;
 grant execute on function private.is_admin() to authenticated;
 
 -- ---------------------------------------------------------------------
@@ -82,8 +91,8 @@ drop policy if exists "admins write notes" on public.notes;
 create policy "admins write notes"
     on public.notes for all
     to authenticated
-    using (private.is_admin())
-    with check (private.is_admin());
+    using ((select private.is_admin()))
+    with check ((select private.is_admin()));
 
 drop policy if exists "analysis is public" on public.newspaper_analysis;
 create policy "analysis is public"
@@ -94,14 +103,14 @@ drop policy if exists "admins write analysis" on public.newspaper_analysis;
 create policy "admins write analysis"
     on public.newspaper_analysis for all
     to authenticated
-    using (private.is_admin())
-    with check (private.is_admin());
+    using ((select private.is_admin()))
+    with check ((select private.is_admin()));
 
 drop policy if exists "admins read admin list" on public.admins;
 create policy "admins read admin list"
     on public.admins for select
     to authenticated
-    using (id = auth.uid());
+    using (id = (select auth.uid()));
 
 -- ---------------------------------------------------------------------
 -- 5. Storage bucket for the PDFs (public read, admin upload)
@@ -119,10 +128,10 @@ drop policy if exists "admins upload pdfs" on storage.objects;
 create policy "admins upload pdfs"
     on storage.objects for insert
     to authenticated
-    with check (bucket_id = 'notes-pdfs' and private.is_admin());
+    with check (bucket_id = 'notes-pdfs' and (select private.is_admin()));
 
 drop policy if exists "admins delete pdfs" on storage.objects;
 create policy "admins delete pdfs"
     on storage.objects for delete
     to authenticated
-    using (bucket_id = 'notes-pdfs' and private.is_admin());
+    using (bucket_id = 'notes-pdfs' and (select private.is_admin()));
