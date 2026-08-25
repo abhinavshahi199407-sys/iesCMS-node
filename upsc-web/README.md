@@ -73,20 +73,26 @@ If you'd rather not hand the script any credentials:
 ```bash
 cd upsc-web
 npm install
-cp .env.example .env.local     # then fill in the two values
 npm run dev                    # http://localhost:3000
 ```
 
-Both values come from **Supabase → Project Settings → API**:
+That is the whole setup. `.env` is committed with the project URL and
+publishable key already filled in, so a fresh clone runs against the live
+project with no configuration step.
+
+Both committed values are **public by design**: Next.js inlines every
+`NEXT_PUBLIC_*` variable into the browser bundle, so each visitor's browser
+receives them anyway. Row Level Security — not the secrecy of that key — is
+what protects the data. The `service_role` key bypasses RLS and must never go
+in `.env`; keep it out of the repo entirely.
+
+To point a checkout at a different Supabase project, create `.env.local`
+(git-ignored); it takes precedence over `.env`.
 
 | Variable | Where to find it |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `anon` / public key |
-
-Only the anon key is used by the app — there is no service-role key in it, so
-nothing secret ships to the browser. Write access is enforced by RLS, not by
-hiding keys.
+| `NEXT_PUBLIC_SUPABASE_URL` | Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Settings → API → publishable key |
 
 Sign in at `/admin/login` and publish from `/admin/dashboard`.
 
