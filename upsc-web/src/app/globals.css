@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-ink-50: #f6f7fb;
+    --color-ink-100: #eceef6;
+    --color-ink-200: #d7dbe9;
+    --color-ink-400: #7c85a3;
+    --color-ink-600: #4a5372;
+    --color-ink-800: #232a45;
+    --color-ink-900: #151a2e;
+
+    --color-brand-50: #eef2ff;
+    --color-brand-100: #e0e7ff;
+    --color-brand-500: #4f46e5;
+    --color-brand-600: #4338ca;
+    --color-brand-700: #3730a3;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background-color: var(--color-ink-50);
+    color: var(--color-ink-900);
+}
+
+/* Rendered Markdown from the daily analysis editor */
+.prose-analysis h1,
+.prose-analysis h2,
+.prose-analysis h3 {
+    font-weight: 700;
+    color: var(--color-ink-900);
+    margin-top: 1.6rem;
+    margin-bottom: 0.6rem;
+    line-height: 1.3;
+}
+.prose-analysis h1 { font-size: 1.5rem; }
+.prose-analysis h2 { font-size: 1.25rem; }
+.prose-analysis h3 { font-size: 1.1rem; }
+.prose-analysis p { margin-bottom: 1rem; line-height: 1.75; }
+.prose-analysis ul,
+.prose-analysis ol { margin: 0 0 1rem 1.25rem; line-height: 1.75; }
+.prose-analysis ul { list-style: disc; }
+.prose-analysis ol { list-style: decimal; }
+.prose-analysis li { margin-bottom: 0.35rem; }
+.prose-analysis a { color: var(--color-brand-600); text-decoration: underline; }
+.prose-analysis blockquote {
+    border-left: 3px solid var(--color-brand-500);
+    padding-left: 1rem;
+    color: var(--color-ink-600);
+    margin: 0 0 1rem 0;
+}
+.prose-analysis code {
+    background: var(--color-ink-100);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+}
+.prose-analysis pre {
+    background: var(--color-ink-900);
+    color: #fff;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+.prose-analysis pre code { background: transparent; padding: 0; }
+.prose-analysis table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    display: block;
+    overflow-x: auto;
+}
+.prose-analysis th,
+.prose-analysis td {
+    border: 1px solid var(--color-ink-200);
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+}
+.prose-analysis th { background: var(--color-ink-100); font-weight: 600; }

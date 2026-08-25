@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+# .env is committed on purpose — it holds only the public project URL and
+# publishable key. Anything secret belongs in .env.local, never here.
+# (the repo-root .gitignore excludes .env, so re-include it explicitly)
+!.env
+.env.local
+.env*.local
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+.DS_Store
