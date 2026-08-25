@@ -15,7 +15,12 @@ create table if not exists public.admins (
     created_at  timestamptz not null default now()
 );
 
-create or replace function public.is_admin()
+-- The helper lives in `private`, not `public`: PostgREST exposes `public`, so a
+-- SECURITY DEFINER function there would be callable by anyone as
+-- /rest/v1/rpc/is_admin. Supabase's own security linter flags that.
+create schema if not exists private;
+
+create or replace function private.is_admin()
 returns boolean
 language sql
 stable
@@ -24,6 +29,10 @@ set search_path = public
 as $$
     select exists (select 1 from public.admins a where a.id = auth.uid());
 $$;
+
+-- RLS expressions are evaluated as the querying role, so it needs EXECUTE.
+grant usage on schema private to authenticated;
+grant execute on function private.is_admin() to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 2. notes — downloadable PDF study material
@@ -73,8 +82,8 @@ drop policy if exists "admins write notes" on public.notes;
 create policy "admins write notes"
     on public.notes for all
     to authenticated
-    using (public.is_admin())
-    with check (public.is_admin());
+    using (private.is_admin())
+    with check (private.is_admin());
 
 drop policy if exists "analysis is public" on public.newspaper_analysis;
 create policy "analysis is public"
@@ -85,8 +94,8 @@ drop policy if exists "admins write analysis" on public.newspaper_analysis;
 create policy "admins write analysis"
     on public.newspaper_analysis for all
     to authenticated
-    using (public.is_admin())
-    with check (public.is_admin());
+    using (private.is_admin())
+    with check (private.is_admin());
 
 drop policy if exists "admins read admin list" on public.admins;
 create policy "admins read admin list"
@@ -110,10 +119,10 @@ drop policy if exists "admins upload pdfs" on storage.objects;
 create policy "admins upload pdfs"
     on storage.objects for insert
     to authenticated
-    with check (bucket_id = 'notes-pdfs' and public.is_admin());
+    with check (bucket_id = 'notes-pdfs' and private.is_admin());
 
 drop policy if exists "admins delete pdfs" on storage.objects;
 create policy "admins delete pdfs"
     on storage.objects for delete
     to authenticated
-    using (bucket_id = 'notes-pdfs' and public.is_admin());
+    using (bucket_id = 'notes-pdfs' and private.is_admin());
