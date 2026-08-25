@@ -2,19 +2,23 @@ import type { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AnalysisCard from '@/components/AnalysisCard';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
+import { absoluteUrl } from '@/lib/site';
 import type { NewspaperAnalysis } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+// Must be a literal: Next statically analyses segment config exports.
+// Keep in step with REVALIDATE_SECONDS in lib/site.ts.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
     title: 'Daily Newspaper Analysis',
     description:
         'Syllabus-mapped daily newspaper and editorial analysis for UPSC and State PSC aspirants.',
+    alternates: { canonical: absoluteUrl('/analysis') },
 };
 
 export default async function AnalysisListPage() {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('newspaper_analysis')
         .select('*')

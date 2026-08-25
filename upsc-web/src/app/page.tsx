@@ -3,15 +3,24 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AnalysisCard from '@/components/AnalysisCard';
 import NoteCard from '@/components/NoteCard';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteUrl } from '@/lib/site';
 import { GS_PAPERS } from '@/lib/constants';
 import { fetchSubtopics, labelMap } from '@/lib/subtopics';
 import type { NewspaperAnalysis, Note } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
+// Statically rendered, re-checked on a timer: fast for readers, cheap to serve
+// and crawlable, while new content still appears within the window.
+// Must be a literal: Next statically analyses segment config exports.
+// Keep in step with REVALIDATE_SECONDS in lib/site.ts.
+export const revalidate = 300;
+
+export const metadata = {
+    alternates: { canonical: absoluteUrl('/') },
+};
 
 export default async function HomePage() {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     const [analysisRes, notesRes] = await Promise.all([
         supabase
@@ -31,8 +40,21 @@ export default async function HomePage() {
     const labels = labelMap(await fetchSubtopics(supabase));
     const loadError = analysisRes.error ?? notesRes.error;
 
+    const websiteSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        url: SITE_URL,
+        inLanguage: 'en-IN',
+    };
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+            />
             <SiteHeader />
 
             <main className="mx-auto max-w-5xl px-4 py-8">

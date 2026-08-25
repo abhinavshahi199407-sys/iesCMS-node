@@ -3,17 +3,69 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import FilterSidebar from '@/components/FilterSidebar';
 import NoteCard from '@/components/NoteCard';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
+import { absoluteUrl } from '@/lib/site';
 import { GS_PAPER_CODES, paperLabel } from '@/lib/constants';
 import { fetchSubtopics, labelMap } from '@/lib/subtopics';
 import type { Note } from '@/lib/types';
 
+// Reads searchParams, so this route is request-rendered by nature. The data
+// query is cheap and the SEO-valuable pages are the analysis articles.
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-    title: 'GS Notes',
-    description: 'Downloadable GS1–GS4 and State PSC notes for civil services aspirants.',
-};
+/**
+ * Each paper and sub-topic filter is a page someone actually searches for
+ * ("UPSC GS2 notes"), so each is self-canonical with its own title and
+ * description. A `q=` search is a different matter — those are unbounded and
+ * thin, so they are canonicalised back to the filter and left out of the index.
+ */
+export async function generateMetadata({
+    searchParams,
+}: {
+    searchParams: SearchParams;
+}): Promise<Metadata> {
+    const { paper, sub, q } = await searchParams;
+    const activePaper = paper && GS_PAPER_CODES.includes(paper) ? paper : undefined;
+
+    let activeSub: string | undefined;
+    let subLabel: string | undefined;
+    if (activePaper && sub) {
+        const match = (await fetchSubtopics(createPublicClient())).find(
+            (s) => s.gs_paper === activePaper && s.code === sub,
+        );
+        if (match) {
+            activeSub = match.code;
+            subLabel = match.label;
+        }
+    }
+
+    const path = activeSub
+        ? `/notes?paper=${activePaper}&sub=${activeSub}`
+        : activePaper
+          ? `/notes?paper=${activePaper}`
+          : '/notes';
+
+    const title = subLabel
+        ? `${subLabel} — ${paperLabel(activePaper!)} Notes`
+        : activePaper
+          ? `${paperLabel(activePaper)} Notes`
+          : 'GS Notes';
+
+    const description = subLabel
+        ? `Free downloadable ${subLabel} notes for ${paperLabel(activePaper!)}, for UPSC and State Civil Services aspirants.`
+        : activePaper
+          ? `Free downloadable ${paperLabel(activePaper)} notes for UPSC and State Civil Services aspirants.`
+          : 'Downloadable GS1–GS4 and State PSC notes for civil services aspirants.';
+
+    return {
+        title,
+        description,
+        alternates: { canonical: absoluteUrl(path) },
+        openGraph: { title, description, url: absoluteUrl(path) },
+        // Search-result permutations are endless; keep them out of the index.
+        robots: q ? { index: false, follow: true } : { index: true, follow: true },
+    };
+}
 
 type SearchParams = Promise<{ paper?: string; sub?: string; q?: string }>;
 
@@ -26,7 +78,7 @@ export default async function NotesPage({
     const activePaper = paper && GS_PAPER_CODES.includes(paper) ? paper : undefined;
     const query = q?.trim() || undefined;
 
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const subtopics = await fetchSubtopics(supabase);
 
     // A sub-topic only means anything within its own paper.

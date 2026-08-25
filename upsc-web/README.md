@@ -109,6 +109,37 @@ Sign in at `/admin/login` and publish from `/admin/dashboard`.
 
 ---
 
+## Search visibility
+
+Organic search is the main way aspirants find this kind of material, so the
+public pages are built for it:
+
+- **Statically rendered, revalidated every 5 minutes.** The home page, the
+  analysis list and every analysis article are prerendered HTML rather than
+  assembled per request. Public pages use a cookie-free Supabase client
+  (`lib/supabase/public.ts`) — the cookie-based one calls `cookies()`, which
+  would opt every route out of static rendering. New content appears within the
+  revalidation window without a redeploy.
+- **`/notes` stays request-rendered** because it reads `searchParams`, but each
+  paper and sub-topic filter is self-canonical with its own title and
+  description, since "UPSC GS2 notes" is a real query. `?q=` searches are
+  `noindex` and canonicalise back to the filter — endless permutations of thin
+  pages help nobody.
+- **`/sitemap.xml`** lists the static pages, every paper and sub-topic filter,
+  and every analysis article, straight from the database.
+- **`/robots.txt`** allows everything except `/admin` and `/auth`.
+- **Structured data**: `WebSite` on the home page, `Article` on each analysis
+  (headline, dates, syllabus mapping), plus Open Graph and Twitter tags — which
+  is what produces a proper preview card when a link is shared on WhatsApp or
+  Telegram.
+
+Set `NEXT_PUBLIC_SITE_URL` once a custom domain is live. It is read at **build**
+time for the prerendered pages, so it has to be a build environment variable —
+setting it only at runtime leaves the wrong origin baked into the static HTML.
+
+After deploying, submit `https://your-domain.com/sitemap.xml` in Google Search
+Console. Nothing gets indexed until Google is told the site exists.
+
 ## Routes
 
 | Route | What it is |
