@@ -5,6 +5,7 @@ import AnalysisCard from '@/components/AnalysisCard';
 import NoteCard from '@/components/NoteCard';
 import { createClient } from '@/lib/supabase/server';
 import { GS_PAPERS } from '@/lib/constants';
+import { fetchSubtopics, labelMap } from '@/lib/subtopics';
 import type { NewspaperAnalysis, Note } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ export default async function HomePage() {
 
     const analyses = (analysisRes.data ?? []) as NewspaperAnalysis[];
     const notes = (notesRes.data ?? []) as Note[];
+    const labels = labelMap(await fetchSubtopics(supabase));
     const loadError = analysisRes.error ?? notesRes.error;
 
     return (
@@ -105,7 +107,15 @@ export default async function HomePage() {
                     {notes.length ? (
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {notes.map((note) => (
-                                <NoteCard key={note.id} note={note} />
+                                <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    subtopicLabel={
+                                        note.subtopic
+                                            ? labels[`${note.gs_paper}:${note.subtopic}`]
+                                            : undefined
+                                    }
+                                />
                             ))}
                         </div>
                     ) : (

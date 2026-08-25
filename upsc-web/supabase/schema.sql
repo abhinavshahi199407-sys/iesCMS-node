@@ -53,6 +53,7 @@ create table if not exists public.notes (
     gs_paper      text not null
                   check (gs_paper in ('GS1', 'GS2', 'GS3', 'GS4', 'State')),
     topic         text,
+    subtopic      text,          -- FK added below, once subtopics exists
     download_url  text not null,
     storage_path  text,
     created_at    timestamptz not null default now()
@@ -76,11 +77,57 @@ create table if not exists public.newspaper_analysis (
 create index if not exists newspaper_analysis_date_idx on public.newspaper_analysis (date desc);
 
 -- ---------------------------------------------------------------------
+-- 3b. subtopics — second filter level within a paper
+--     A lookup table rather than a CHECK constraint, so new sub-topics are an
+--     INSERT rather than a migration.
+-- ---------------------------------------------------------------------
+create table if not exists public.subtopics (
+    gs_paper    text not null
+                check (gs_paper in ('GS1', 'GS2', 'GS3', 'GS4', 'State')),
+    code        text not null,
+    label       text not null,
+    sort_order  integer not null default 0,
+    primary key (gs_paper, code)
+);
+
+-- Composite FK: a note's sub-topic must belong to that note's own paper, so a
+-- GS1 note cannot carry a GS3 sub-topic. NULL stays allowed (MATCH SIMPLE),
+-- so an untagged note is fine.
+do $$ begin
+    if not exists (select 1 from pg_constraint where conname = 'notes_subtopic_fkey') then
+        alter table public.notes
+            add constraint notes_subtopic_fkey
+            foreign key (gs_paper, subtopic)
+            references public.subtopics (gs_paper, code)
+            on update cascade;
+    end if;
+end $$;
+
+create index if not exists notes_subtopic_idx on public.notes (gs_paper, subtopic);
+
+-- GS Paper I, following the UPSC syllabus grouping. Other papers have no
+-- sub-topics yet; the UI simply shows no second level until rows are added.
+insert into public.subtopics (gs_paper, code, label, sort_order) values
+    ('GS1', 'art-culture',       'Indian Heritage & Culture',          10),
+    ('GS1', 'modern-history',    'Modern Indian History',              20),
+    ('GS1', 'freedom-struggle',  'Freedom Struggle',                   30),
+    ('GS1', 'post-independence', 'Post-Independence India',            40),
+    ('GS1', 'world-history',     'World History',                      50),
+    ('GS1', 'indian-society',    'Indian Society & Diversity',         60),
+    ('GS1', 'social-issues',     'Social Empowerment & Social Issues', 70),
+    ('GS1', 'physical-geo',      'Physical Geography',                 80),
+    ('GS1', 'resource-geo',      'Resources & Economic Geography',     90),
+    ('GS1', 'geo-phenomena',     'Geophysical Phenomena',             100)
+on conflict (gs_paper, code) do update
+    set label = excluded.label, sort_order = excluded.sort_order;
+
+-- ---------------------------------------------------------------------
 -- 4. Row Level Security — world readable, admin writable
 -- ---------------------------------------------------------------------
 alter table public.notes              enable row level security;
 alter table public.newspaper_analysis enable row level security;
 alter table public.admins             enable row level security;
+alter table public.subtopics          enable row level security;
 
 drop policy if exists "notes are public" on public.notes;
 create policy "notes are public"
@@ -102,6 +149,18 @@ create policy "analysis is public"
 drop policy if exists "admins write analysis" on public.newspaper_analysis;
 create policy "admins write analysis"
     on public.newspaper_analysis for all
+    to authenticated
+    using ((select private.is_admin()))
+    with check ((select private.is_admin()));
+
+drop policy if exists "subtopics are public" on public.subtopics;
+create policy "subtopics are public"
+    on public.subtopics for select
+    using (true);
+
+drop policy if exists "admins write subtopics" on public.subtopics;
+create policy "admins write subtopics"
+    on public.subtopics for all
     to authenticated
     using ((select private.is_admin()))
     with check ((select private.is_admin()));

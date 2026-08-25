@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { GS_PAPERS, STORAGE_BUCKET } from '@/lib/constants';
+import type { Subtopic } from '@/lib/types';
 
 type Status = { kind: 'idle' | 'busy' | 'ok' | 'error'; message?: string };
 
@@ -25,6 +26,24 @@ export default function NoteUploadForm() {
     const router = useRouter();
     const formRef = useRef<HTMLFormElement>(null);
     const [status, setStatus] = useState<Status>({ kind: 'idle' });
+    const [subtopics, setSubtopics] = useState<Subtopic[]>([]);
+    const [paper, setPaper] = useState<string>('GS1');
+
+    useEffect(() => {
+        let cancelled = false;
+        createClient()
+            .from('subtopics')
+            .select('gs_paper, code, label, sort_order')
+            .order('sort_order', { ascending: true })
+            .then(({ data }) => {
+                if (!cancelled && data) setSubtopics(data as Subtopic[]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const paperSubtopics = subtopics.filter((s) => s.gs_paper === paper);
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -35,6 +54,7 @@ export default function NoteUploadForm() {
         const description = String(data.get('description') ?? '').trim();
         const gsPaper = String(data.get('gs_paper') ?? '');
         const topic = String(data.get('topic') ?? '').trim();
+        const subtopic = String(data.get('subtopic') ?? '');
         const file = data.get('file');
 
         if (!(file instanceof File) || file.size === 0) {
@@ -69,6 +89,7 @@ export default function NoteUploadForm() {
             title,
             description: description || null,
             gs_paper: gsPaper,
+            subtopic: subtopic || null,
             topic: topic || null,
             download_url: publicUrl,
             storage_path: path,
@@ -82,6 +103,7 @@ export default function NoteUploadForm() {
         }
 
         formRef.current?.reset();
+        setPaper('GS1');
         setStatus({ kind: 'ok', message: `“${title}” published.` });
         router.refresh();
     }
@@ -128,7 +150,8 @@ export default function NoteUploadForm() {
                             id="note-paper"
                             name="gs_paper"
                             required
-                            defaultValue="GS1"
+                            value={paper}
+                            onChange={(e) => setPaper(e.target.value)}
                             className={inputClass}
                         >
                             {GS_PAPERS.map((paper) => (
@@ -149,6 +172,25 @@ export default function NoteUploadForm() {
                         />
                     </Field>
                 </div>
+
+                {paperSubtopics.length ? (
+                    <Field label="Sub-topic" htmlFor="note-subtopic" optional>
+                        <select
+                            id="note-subtopic"
+                            name="subtopic"
+                            defaultValue=""
+                            key={paper}
+                            className={inputClass}
+                        >
+                            <option value="">— none —</option>
+                            {paperSubtopics.map((sub) => (
+                                <option key={sub.code} value={sub.code}>
+                                    {sub.label}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                ) : null}
 
                 <Field label="PDF file" htmlFor="note-file">
                     <input

@@ -5,6 +5,7 @@ import FilterSidebar from '@/components/FilterSidebar';
 import NoteCard from '@/components/NoteCard';
 import { createClient } from '@/lib/supabase/server';
 import { GS_PAPER_CODES, paperLabel } from '@/lib/constants';
+import { fetchSubtopics, labelMap } from '@/lib/subtopics';
 import type { Note } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -14,18 +15,25 @@ export const metadata: Metadata = {
     description: 'Downloadable GS1–GS4 and State PSC notes for civil services aspirants.',
 };
 
-type SearchParams = Promise<{ paper?: string; q?: string }>;
+type SearchParams = Promise<{ paper?: string; sub?: string; q?: string }>;
 
 export default async function NotesPage({
     searchParams,
 }: {
     searchParams: SearchParams;
 }) {
-    const { paper, q } = await searchParams;
+    const { paper, sub, q } = await searchParams;
     const activePaper = paper && GS_PAPER_CODES.includes(paper) ? paper : undefined;
     const query = q?.trim() || undefined;
 
     const supabase = await createClient();
+    const subtopics = await fetchSubtopics(supabase);
+
+    // A sub-topic only means anything within its own paper.
+    const activeSub =
+        activePaper && sub && subtopics.some((s) => s.gs_paper === activePaper && s.code === sub)
+            ? sub
+            : undefined;
 
     let request = supabase
         .from('notes')
@@ -33,6 +41,7 @@ export default async function NotesPage({
         .order('created_at', { ascending: false });
 
     if (activePaper) request = request.eq('gs_paper', activePaper);
+    if (activeSub) request = request.eq('subtopic', activeSub);
     if (query) {
         const safe = query.replace(/[%,()]/g, ' ');
         request = request.or(`title.ilike.%${safe}%,topic.ilike.%${safe}%`);
@@ -40,31 +49,56 @@ export default async function NotesPage({
 
     const [{ data, error }, countsRes] = await Promise.all([
         request,
-        supabase.from('notes').select('gs_paper'),
+        supabase.from('notes').select('gs_paper, subtopic'),
     ]);
 
     const notes = (data ?? []) as Note[];
+    const allRows = (countsRes.data ?? []) as {
+        gs_paper: string;
+        subtopic: string | null;
+    }[];
 
     const counts: Record<string, number> = {};
-    for (const row of (countsRes.data ?? []) as { gs_paper: string }[]) {
+    const subCounts: Record<string, number> = {};
+    for (const row of allRows) {
         counts[row.gs_paper] = (counts[row.gs_paper] ?? 0) + 1;
+        if (activePaper && row.gs_paper === activePaper && row.subtopic) {
+            subCounts[row.subtopic] = (subCounts[row.subtopic] ?? 0) + 1;
+        }
     }
+
+    const labels = labelMap(subtopics);
+    const heading = activeSub
+        ? labels[`${activePaper}:${activeSub}`]
+        : activePaper
+          ? paperLabel(activePaper)
+          : 'All GS Notes';
 
     return (
         <>
             <SiteHeader />
 
             <main className="mx-auto max-w-5xl px-4 py-8">
-                <h1 className="text-2xl font-bold sm:text-3xl">
-                    {activePaper ? paperLabel(activePaper) : 'All GS Notes'}
-                </h1>
+                {activeSub ? (
+                    <p className="text-sm font-semibold text-brand-600">
+                        {paperLabel(activePaper!)}
+                    </p>
+                ) : null}
+                <h1 className="text-2xl font-bold sm:text-3xl">{heading}</h1>
                 <p className="mt-1 text-sm text-ink-600">
                     {notes.length} {notes.length === 1 ? 'note' : 'notes'}
                     {query ? ` matching “${query}”` : ''}
                 </p>
 
                 <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:gap-8">
-                    <FilterSidebar active={activePaper} query={query} counts={counts} />
+                    <FilterSidebar
+                        active={activePaper}
+                        activeSub={activeSub}
+                        query={query}
+                        counts={counts}
+                        subCounts={subCounts}
+                        subtopics={subtopics}
+                    />
 
                     <div className="min-w-0 flex-1">
                         {error ? (
@@ -74,7 +108,15 @@ export default async function NotesPage({
                         ) : notes.length ? (
                             <div className="grid gap-4 sm:grid-cols-2">
                                 {notes.map((note) => (
-                                    <NoteCard key={note.id} note={note} />
+                                    <NoteCard
+                                        key={note.id}
+                                        note={note}
+                                        subtopicLabel={
+                                            note.subtopic
+                                                ? labels[`${note.gs_paper}:${note.subtopic}`]
+                                                : undefined
+                                        }
+                                    />
                                 ))}
                             </div>
                         ) : (
